@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #-*- encoding: utf-8 -*-
 '''
 usage:  main.py -u url [-d delay] [-o output directory] [-h]
@@ -94,9 +95,6 @@ def backup(pageurl,dir):
     for url in css:
         download(base, url)
     #替换html中的地址
-    f=open('a.html','w')
-    f.write(html)
-    f.close()
     html=re.sub('href="[\S]*/([^/]+\.jpe?g|[^/]+\.gif|[^/]+\.png|[^/]+\.svg)"','href="./images/\\1"',html,flags=re.I)
     html=re.sub('href="[\S]*/([^/]+\.css)"','href="./css/\\1"',html,flags=re.I)
     html=re.sub('src="[\S]*/([^/]+\.jpe?g|[^/]+\.gif|[^/]+\.png)"','src="./images/\\1"',html,flags=re.I)
@@ -133,7 +131,7 @@ if __name__=='__main__':
                 print 'invalid url.'
                 sys.exit()
         elif op=='-o':
-            if re.match('[^<>:"/\\\|\?\*]+',v):
+            if re.match('/?[^<>:"\|\?\*]+()',v):
                 outdir=v
             else:
                 print 'invalid output directory.'
@@ -142,7 +140,7 @@ if __name__=='__main__':
             print __doc__
             sys.exit()
     if url=='':
-        print 'url is required.'
+        print 'url is required. see main.py -h'
         sys.exit()
     elif re.match('https?://[\w\d\-\.]',url):
         url=url+'/'
@@ -154,6 +152,8 @@ if __name__=='__main__':
         sys.exit()
     #循环备份
     while True:
-        backup(url,time.strftime('%Y%m%d%H%M%S'))
+        dir=time.strftime('%Y%m%d%H%M%S')
+        print dir
+        backup(url,dir)
         time.sleep(delay)
     
