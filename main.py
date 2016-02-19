@@ -27,18 +27,24 @@ def download(base, url):
 
     return nothing
     '''
-    if re.search('.+\.css',url,flags=re.I):
+    if re.search('.+\.css$',url,flags=re.I):
         filename='./css/'+url[url.rfind('/')+1:]
-    elif re.search('.+\.js',url,flags=re.I):
+    elif re.search('.+\.js$',url,flags=re.I):
         filename='./js/'+url[url.rfind('/')+1:]
-    elif re.search('.+\.jpe?g|.+\.png|.+\.gif|.+\.svg',url,flags=re.I):
+    elif re.search('.+\.jpe?g$|.+\.png$|.+\.gif$|.+\.svg$',url,flags=re.I):
         filename='./images/'+url[url.rfind('/')+1:]
     else:
-        print 'not a css, js, img:',url
+        #print 'not a css, js, img:',url
         return
-    if url.find('http://')<0:
+    if re.match('(\.\.)|\.|/?[^/:]+/',url):
         url=base+url
-    urllib.urlretrieve(url,filename)
+    elif re.match('//',url):
+        sre=re.findall('^(.+:)//.+',base,flags=re.I)
+        url=sre[0]+url
+    try:
+        urllib.urlretrieve(url,filename)
+    except:
+        print url,filename
 
 #获取网页
 def getpage(url):
@@ -65,29 +71,37 @@ def backup(pageurl,dir):
     return nothing
     '''
     cwd=os.getcwd()
-    os.mkdir(dir)
-    os.chdir(dir)
     try:
+        os.mkdir(dir)
+        os.chdir(dir)
         os.mkdir('images')
         os.mkdir('js')
         os.mkdir('css')
     except:
-        pass
+        print 'folder exists or can\'t create folder'
+        sys.exit()
     base=re.sub('(http://[\w\d\.\-/]+/)[^/]*$','\\1',pageurl,flags=re.I)
     html=getpage(pageurl)
     #图标和css
-    src=re.findall('src="(.+?\..+?)"',html,flags=re.I)
+    src=re.findall('src="([^"]+?\.[^"/]+?)"',html,flags=re.I)
     for url in src:
         download(base, url)
     #图片和脚本
     href=re.findall('href="([^"]+?\.[^"/]+?)"',html,flags=re.I)
     for url in href:
         download(base, url)
+    css=re.findall('url\(([^\\\)]+?\.[^/\)]+?)\)',html,flags=re.I)
+    for url in css:
+        download(base, url)
     #替换html中的地址
-    html=re.sub('href="[\S]*/([^/]+\.jpe?g|[^/]+\.gif|[^/]+\.png|[^/]+\.svg)','href="./images/\\1"',html,flags=re.I)
+    f=open('a.html','w')
+    f.write(html)
+    f.close()
+    html=re.sub('href="[\S]*/([^/]+\.jpe?g|[^/]+\.gif|[^/]+\.png|[^/]+\.svg)"','href="./images/\\1"',html,flags=re.I)
     html=re.sub('href="[\S]*/([^/]+\.css)"','href="./css/\\1"',html,flags=re.I)
     html=re.sub('src="[\S]*/([^/]+\.jpe?g|[^/]+\.gif|[^/]+\.png)"','src="./images/\\1"',html,flags=re.I)
     html=re.sub('src="[\S]*/([^/]+\.js)"','src="./js/\\1"',html,flags=re.I)
+    html=re.sub('url\([\S]*/([^/\)]+\.jpe?g|[^/\)]+\.gif|[^/\)]+\.png|[^/\)]+\.svg)\)','url(./images/\\1)',html,flags=re.I)
     f=open('index.html','w')
     f.write(html)
     f.close()
@@ -101,6 +115,7 @@ if __name__=='__main__':
     delay=60
     url=''
     outdir='./'
+    #设置参数
     for op, v in opts:
         if op=='-d':
             if re.match('[\d\.]+',v):
@@ -131,14 +146,14 @@ if __name__=='__main__':
         sys.exit()
     elif re.match('https?://[\w\d\-\.]',url):
         url=url+'/'
+    #设定工作目录
     try:
         os.chdir(outdir)
     except:
         print 'cant\'t get access to the output directory'
         sys.exit()
-    i=10
-    while i>0:
+    #循环备份
+    while True:
         backup(url,time.strftime('%Y%m%d%H%M%S'))
         time.sleep(delay)
-        i=i-1
     
