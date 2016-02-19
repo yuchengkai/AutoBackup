@@ -1,8 +1,21 @@
 #-*- encoding: utf-8 -*-
+'''
+usage:  main.py -u url [-d delay] [-o output directory] [-h]
+backup web page between specified time
+
+  -u    url of the web page.
+  -d    time between every to backups in second. the default value is 60.
+  -o    output directory to save the backups. set to current directory as default.
+  -h    show this message.
+'''
 import urllib
 import urllib2
 import re
 import os
+import sys
+import getopt
+import time
+
 
 #下载网页中的图片等文件
 def download(base, url):
@@ -52,6 +65,7 @@ def backup(pageurl,dir):
     return nothing
     '''
     cwd=os.getcwd()
+    os.mkdir(dir)
     os.chdir(dir)
     try:
         os.mkdir('images')
@@ -80,4 +94,51 @@ def backup(pageurl,dir):
     os.chdir(cwd)
 
 if __name__=='__main__':
-    backup('http://m.sohu.com/','images')
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'd:u:o:h')
+    except:
+        print 'error getting the parameters'
+    delay=60
+    url=''
+    outdir='./'
+    for op, v in opts:
+        if op=='-d':
+            if re.match('[\d\.]+',v):
+                delay=int(v)
+                if delay<1:
+                    print 'invalid delay.'
+                    sys.exit()
+            else:
+                print 'invalid delay.'
+                sys.exit()
+        elif op=='-u':
+            if re.match('https?://[\d\w\-\.\?/%=&]+',v):
+                url=v
+            else:
+                print 'invalid url.'
+                sys.exit()
+        elif op=='-o':
+            if re.match('[^<>:"/\\\|\?\*]+',v):
+                outdir=v
+            else:
+                print 'invalid output directory.'
+                sys.exit()
+        elif op=='-h':
+            print __doc__
+            sys.exit()
+    if url=='':
+        print 'url is required.'
+        sys.exit()
+    elif re.match('https?://[\w\d\-\.]',url):
+        url=url+'/'
+    try:
+        os.chdir(outdir)
+    except:
+        print 'cant\'t get access to the output directory'
+        sys.exit()
+    i=10
+    while i>0:
+        backup(url,time.strftime('%Y%m%d%H%M%S'))
+        time.sleep(delay)
+        i=i-1
+    
