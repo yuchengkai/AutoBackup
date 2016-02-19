@@ -4,11 +4,6 @@
 
 ## 开发思路
 
-- Blazing fast generating
-- Support for GitHub Flavored Markdown and most Octopress plugins
-- One-command deploy to GitHub Pages, Heroku, etc.
-- Powerful plugin system
-
 **确定功能**
 
 - 可以指定网页的地址
